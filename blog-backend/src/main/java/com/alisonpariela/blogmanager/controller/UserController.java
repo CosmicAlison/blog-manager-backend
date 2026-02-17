@@ -20,6 +20,10 @@ import com.alisonpariela.blogmanager.service.UserService;
 import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;
 
+
+import com.alisonpariela.blogmanager.DTO.CreateUserRequest;
+import com.alisonpariela.blogmanager.DTO.UpdateUserRequest;
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {

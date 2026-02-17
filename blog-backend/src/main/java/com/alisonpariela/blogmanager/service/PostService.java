@@ -42,7 +42,7 @@ public class PostService {
         return postRepository.findUserPostsOrderedByDate(userId, pageable);
     }
 
-    public void deletePost(Long postId){
+    public boolean deletePost(Long postId){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(auth.getName());
 
@@ -50,10 +50,11 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
         if (!post.getUser().getId().equals(userId)) {
-            throw new RuntimeException("You are not allowed to delete this post");
+            throw new RuntimeException("You are not allowed to delete this post"); 
         }
 
         postRepository.delete(post);
+        return true; 
     }
 
 

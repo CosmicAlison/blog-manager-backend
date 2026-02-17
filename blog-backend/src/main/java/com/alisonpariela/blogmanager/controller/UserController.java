@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.PostMapping;
+
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.alisonpariela.blogmanager.DTO.UserDTO;
@@ -15,24 +15,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 
 import com.alisonpariela.blogmanager.service.UserService;
 
-import com.alisonpariela.blogmanager.DTO.CreateUserRequest;
 import com.alisonpariela.blogmanager.DTO.UpdateUserRequest;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
-    }
-
-    @PostMapping
-    public ResponseEntity<UserDTO> createUser(@RequestBody CreateUserRequest request) {
-        return ResponseEntity.ok(
-            userService.createUser(request.getUsername(), request.getPassword(), request.getEmail())
-        );
     }
 
     @PutMapping("/{id}")

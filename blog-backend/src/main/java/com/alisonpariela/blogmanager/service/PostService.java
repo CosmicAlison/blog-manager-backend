@@ -14,6 +14,8 @@ import lombok.AllArgsConstructor;
 import com.alisonpariela.blogmanager.model.Post;
 import com.alisonpariela.blogmanager.model.User;
 import org.springframework.security.core.Authentication;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 @AllArgsConstructor
@@ -23,14 +25,35 @@ public class PostService {
     private final UserRepository userRepository; 
 
     @Transactional
-    public Post saveOrUpdatePost(String title, String contents, Long userId){
+    public Post createPost(String title, String contents){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = Long.parseLong(auth.getName());
+
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found")); 
+            .orElseThrow(() -> new EntityNotFoundException("User not found")); 
 
         Post post = new Post();
         post.setTitle(title);
         post.setContents(contents);
         post.setUser(user); 
+
+        return postRepository.save(post);
+    }
+
+    @Transactional
+    public Post updatePost(Long postId, String title, String contents){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = Long.parseLong(auth.getName());
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
+
+        if (!post.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You are not allowed to update this post"); 
+        }
+
+        post.setTitle(title);
+        post.setContents(contents);
 
         return postRepository.save(post);
     }
@@ -42,20 +65,18 @@ public class PostService {
         return postRepository.findUserPostsOrderedByDate(userId, pageable);
     }
 
-    public boolean deletePost(Long postId){
+    @Transactional
+    public void deletePost(Long postId){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(auth.getName());
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Post not found"));
 
         if (!post.getUser().getId().equals(userId)) {
-            throw new RuntimeException("You are not allowed to delete this post"); 
+            throw new AccessDeniedException("You are not allowed to delete this post"); 
         }
 
         postRepository.delete(post);
-        return true; 
     }
-
-
 }

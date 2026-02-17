@@ -13,6 +13,8 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
+import org.springframework.security.access.AccessDeniedException;
+
 @AllArgsConstructor
 @Service
 public class UserService {
@@ -63,18 +65,18 @@ public class UserService {
         return new UserDTO(saved.getId(), saved.getUsername(), saved.getEmail());
     }
 
-    public boolean deleteUser(Long userId){
+    @Transactional 
+    public void deleteUser(Long userId){
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long authId = Long.parseLong(auth.getName());
 
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found.")); 
+            .orElseThrow(() -> new EntityNotFoundException("User not found.")); 
 
         if (!user.getId().equals(authId)){
-            throw new RuntimeException("You are not permitted to delete this user"); 
+            throw new AccessDeniedException("You are not permitted to delete this user"); 
         }
 
         userRepository.delete(user);
-        return true;
     }
 }

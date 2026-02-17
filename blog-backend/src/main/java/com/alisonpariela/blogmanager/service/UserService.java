@@ -43,7 +43,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserDTO updateUser(Long userId, String username, String email, String password) {
+    public UserDTO updateUser(Long userId, String username, String email) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -56,10 +56,6 @@ public class UserService {
 
         user.setUsername(username);
         user.setEmail(email);
-
-        if (password != null && !password.isEmpty()) {
-            user.setPassword(passwordEncoder.encode(password));
-        }
 
         User saved = userRepository.save(user);
         return new UserDTO(saved.getId(), saved.getUsername(), saved.getEmail());

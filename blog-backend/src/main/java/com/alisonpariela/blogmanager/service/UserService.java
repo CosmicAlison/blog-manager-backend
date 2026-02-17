@@ -1,13 +1,12 @@
 package com.alisonpariela.blogmanager.service;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.alisonpariela.blogmanager.DTO.UserDTO;
 import com.alisonpariela.blogmanager.model.User;
 import com.alisonpariela.blogmanager.repository.UserRepository;
+import com.alisonpariela.blogmanager.security.AuthUtil;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -44,8 +43,14 @@ public class UserService {
 
     @Transactional
     public UserDTO updateUser(Long userId, String username, String email) {
+        Long authId = AuthUtil.getAuthenticatedUserId();
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        
+        if (!user.getId().equals(authId)){
+            throw new AccessDeniedException("You are not permitted to update this user"); 
+        }
 
         if (!user.getUsername().equals(username) && userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Username already in use by another user");
@@ -63,8 +68,7 @@ public class UserService {
 
     @Transactional 
     public void deleteUser(Long userId){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long authId = Long.parseLong(auth.getName());
+        Long authId = AuthUtil.getAuthenticatedUserId();
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("User not found.")); 

@@ -2,18 +2,19 @@ package com.alisonpariela.blogmanager.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Service;
 
 import com.alisonpariela.blogmanager.repository.PostRepository;
 import com.alisonpariela.blogmanager.repository.UserRepository;
+import com.alisonpariela.blogmanager.security.AuthUtil;
 
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 
 import com.alisonpariela.blogmanager.model.Post;
 import com.alisonpariela.blogmanager.model.User;
-import org.springframework.security.core.Authentication;
+
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -26,8 +27,7 @@ public class PostService {
 
     @Transactional
     public Post createPost(String title, String contents){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(auth.getName());
+        Long userId = AuthUtil.getAuthenticatedUserId();
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new EntityNotFoundException("User not found")); 
@@ -42,8 +42,7 @@ public class PostService {
 
     @Transactional
     public Post updatePost(Long postId, String title, String contents){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(auth.getName());
+        Long userId = AuthUtil.getAuthenticatedUserId();
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));
@@ -59,16 +58,14 @@ public class PostService {
     }
 
     public Page<Post> getUserPosts(Pageable pageable){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(auth.getName());
+        Long userId = AuthUtil.getAuthenticatedUserId();
 
         return postRepository.findUserPostsOrderedByDate(userId, pageable);
     }
 
     @Transactional
     public void deletePost(Long postId){
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        Long userId = Long.parseLong(auth.getName());
+        Long userId = AuthUtil.getAuthenticatedUserId();
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("Post not found"));

@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Table(name = "users")
-public class User implements UserDetails {
+public class User implements UserDetails, CredentialsContainer {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

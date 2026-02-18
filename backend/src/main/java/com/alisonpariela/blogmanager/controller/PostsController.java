@@ -39,7 +39,7 @@ public class PostsController {
     
     @PostMapping
     public ResponseEntity<Post> createPost(@Valid @RequestBody PostRequest request) {
-        Post created = postService.createPost(request.getTitle(), request.getContent());
+        Post created = postService.createPost(request.getTitle(), request.getContents());
         return ResponseEntity.ok(created);
     }
 
@@ -48,7 +48,7 @@ public class PostsController {
             @PathVariable Long id,
             @Valid @RequestBody PostRequest request
     ) {
-        Post updated = postService.updatePost(id, request.getTitle(), request.getContent());
+        Post updated = postService.updatePost(id, request.getTitle(), request.getContents());
         return ResponseEntity.ok(updated);
     }
 
@@ -60,13 +60,13 @@ public class PostsController {
 
     public static class PostRequest {
         private String title;
-        private String content;
+        private String contents;
 
         public String getTitle() { return title; }
         public void setTitle(String title) { this.title = title; }
 
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
+        public String getContents() { return contents; }
+        public void setContents(String contents) { this.contents = contents; }
     }
 
 }

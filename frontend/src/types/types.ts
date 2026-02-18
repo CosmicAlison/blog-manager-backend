@@ -1,7 +1,7 @@
 export interface Post {
   id: number;
   title: string;
-  excerpt: string;
+  contents: string;
   date: string;
   tag: "Essay" | "Dev" | "Life";
   readTime: string;

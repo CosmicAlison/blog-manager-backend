@@ -97,7 +97,7 @@ export default function PostCard({ post, index, onEdit, onDelete }: PostCardProp
 
           {/* Excerpt */}
           <p className="text-sm text-stone-500 leading-relaxed line-clamp-2 mb-3">
-            {post.excerpt}
+            {post.contents}
           </p>
 
           {/* Meta */}

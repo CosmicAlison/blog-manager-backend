@@ -1,43 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Post } from "../types/types";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-
 export const POSTS_PER_PAGE = 10;
-
-function guessTag(text: string): Post["tag"] {
-  const t = text.toLowerCase();
-  if (t.match(/code|dev|ship|build|tech|js|css|html|api/)) return "Dev";
-  if (t.match(/walk|life|feel|day|morning|night|friend|family/)) return "Life";
-  return "Essay";
-}
-
-function estimateRead(text: string): string {
-  const words = text.trim().split(/\s+/).length;
-  return `${Math.max(1, Math.round(words / 200))} min`;
-}
 
 interface AddPostInput {
   title: string;
-  excerpt: string;
+  contents: string;
 }
-
-interface EditPostInput {
-  id: number;
-  title: string;
-  excerpt: string;
-}
-
 
 interface PageResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  size: number;
-  number: number; 
-  first: boolean;
-  last: boolean;
 }
 
 export function useBlog() {
@@ -48,73 +25,40 @@ export function useBlog() {
   const [totalPosts, setTotalPosts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  // Fetch posts from backend with pagination
-  useEffect(() => {
-    async function fetchPosts() {
-      if (!accessToken) return;
-      
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        const response = await fetch(`${API_URL}/posts?page=${page}&size=${POSTS_PER_PAGE}&sort=createdAt,desc`, {
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch posts");
-        }
-
-        const data: PageResponse<Post> = await response.json();
-        setPosts(data.content);
-        setTotalPages(data.totalPages);
-        setTotalPosts(data.totalElements);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchPosts();
-  }, [accessToken, page]);
-
-  async function addPost({ title, excerpt }: AddPostInput): Promise<void> {
-    const body = excerpt || "No excerpt provided.";
+  const fetchPosts = useCallback(async () => {
+    if (!accessToken) return;
     
+    setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/posts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          title,
-          excerpt: body,
-          tag: guessTag(title + " " + body),
-          readTime: estimateRead(body),
-        }),
+      const response = await fetch(`${API_URL}/posts?page=${page}&size=${POSTS_PER_PAGE}&sort=createdAt,desc`, {
+        headers: { "Authorization": `Bearer ${accessToken}` },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create post");
-      }
+      if (!response.ok) throw new Error("Failed to fetch posts");
 
-      // Go back to first page to see the new post (posts are sorted by createdAt desc)
-      setPage(0);
+      const data: PageResponse<Post> = await response.json();
+      setPosts(data.content);
+      setTotalPages(data.totalPages);
+      setTotalPosts(data.totalElements);
     } catch (err: any) {
       setError(err.message);
-      throw err;
+    } finally {
+      setIsLoading(false);
     }
-  }
+  }, [accessToken, page]);
 
-  async function editPost({ id, title, excerpt }: EditPostInput): Promise<void> {
-    const body = excerpt || "No excerpt provided.";
-    
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  async function editPost({ id, title, content }: { id: number; title: string; content: string }): Promise<void> {
+    if (!accessToken) {
+      navigate("/login");
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/posts/${id}`, {
         method: "PUT",
@@ -123,10 +67,8 @@ export function useBlog() {
           "Authorization": `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          title,
-          excerpt: body,
-          tag: guessTag(title + " " + body),
-          readTime: estimateRead(body),
+          title: title,
+          contents: content,
         }),
       });
 
@@ -135,7 +77,7 @@ export function useBlog() {
       }
 
       const updatedPost = await response.json();
-      // Update the post in the current page
+
       setPosts((prev) =>
         prev.map((p) => (p.id === id ? updatedPost : p))
       );
@@ -145,26 +87,30 @@ export function useBlog() {
     }
   }
 
-  async function deletePost(id: number): Promise<void> {
+  async function addPost({ title, contents }: AddPostInput): Promise<void> {
+    if (!accessToken) { navigate("/login"); return; }
+
     try {
-      const response = await fetch(`${API_URL}/posts/${id}`, {
-        method: "DELETE",
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           "Authorization": `Bearer ${accessToken}`,
         },
+        body: JSON.stringify({ title, contents }), 
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete post");
-      }
+      if (!response.ok) throw new Error("Failed to create post");
 
-      const remainingOnPage = posts.length - 1;
-      if (remainingOnPage === 0 && page > 0) {
-        setPage(page - 1);
+      const newPost = await response.json();
+
+      setPosts((prev) => [newPost, ...prev.slice(0, POSTS_PER_PAGE - 1)]);
+      setTotalPosts((prev) => prev + 1);
+
+      if (page !== 0) {
+        setPage(0);
       } else {
-        // Refresh current page
-        setPosts((prev) => prev.filter((p) => p.id !== id));
-        setTotalPosts((prev) => prev - 1);
+        fetchPosts(); 
       }
     } catch (err: any) {
       setError(err.message);
@@ -172,15 +118,30 @@ export function useBlog() {
     }
   }
 
-  function changePage(p: number): void {
-    // Convert from 1-indexed (UI) to 0-indexed (Spring)
-    setPage(p - 1);
+  async function deletePost(id: number): Promise<void> {
+    if (!accessToken) return;
+    try {
+      const response = await fetch(`${API_URL}/posts/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${accessToken}` },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete post");
+
+      if (posts.length === 1 && page > 0) {
+        setPage(page - 1);
+      } else {
+        fetchPosts(); 
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   }
 
   return {
     posts,
-    paginated: posts, // All posts on current page
-    page: page + 1, // Convert back to 1-indexed for UI
+    page: page + 1,
     totalPosts,
     totalPages: Math.max(1, totalPages),
     isLoading,
@@ -188,6 +149,6 @@ export function useBlog() {
     addPost,
     editPost,
     deletePost,
-    changePage,
+    changePage: (p: number) => setPage(p - 1),
   };
 }

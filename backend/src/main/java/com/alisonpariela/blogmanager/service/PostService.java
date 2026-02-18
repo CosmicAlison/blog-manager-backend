@@ -21,7 +21,7 @@ import org.springframework.security.access.AccessDeniedException;
 @Service
 @AllArgsConstructor
 public class PostService {
-
+    
     private final PostRepository postRepository;
     private final UserRepository userRepository; 
 

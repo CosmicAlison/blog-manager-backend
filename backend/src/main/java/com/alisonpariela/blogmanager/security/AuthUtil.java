@@ -1,5 +1,6 @@
 package com.alisonpariela.blogmanager.security;
 
+import com.alisonpariela.blogmanager.model.User; 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -10,15 +11,17 @@ public class AuthUtil {
     public static Long getAuthenticatedUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() == null) {
+        if (auth == null || !auth.isAuthenticated()) {
             throw new RuntimeException("User not authenticated");
         }
 
-        try {
-            return Long.parseLong(auth.getPrincipal().toString());
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid user ID in authentication");
+        Object principal = auth.getPrincipal();
+
+        // Check if the principal is an instance of your User entity
+        if (principal instanceof User) {
+            return ((User) principal).getId();
         }
+
+        throw new RuntimeException("Principal is not an instance of User");
     }
 }
-

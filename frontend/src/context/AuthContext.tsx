@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const checkAuth = async () => {
       const savedUser = localStorage.getItem("user");
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!response.ok) throw new Error("Login failed");
 
     const data: AuthResponse = await response.json();
-    
+
     setAccessToken(data.accessToken);
 
     await fetchUserProfile(data.accessToken);
@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!response.ok) throw new Error("Registration failed");
 
     const data: AuthResponse = await response.json();
+
     setAccessToken(data.accessToken);
     await fetchUserProfile(data.accessToken);
   };

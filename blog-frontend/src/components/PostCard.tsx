@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Post } from "../types/types";
 
 interface PostCardProps {
@@ -7,7 +8,6 @@ interface PostCardProps {
   onEdit: (post: Post) => void;
   onDelete: (post: Post) => void;
 }
-
 
 interface IconButtonProps {
   title: string;
@@ -23,11 +23,13 @@ function IconButton({ title, visible, onClick, hoverClass, children }: IconButto
       title={title}
       onClick={onClick}
       className={[
-        "flex items-center justify-center w-7 h-7 rounded-md",
-        "border border-stone-200 bg-white text-stone-400",
+        "flex items-center justify-center rounded-md",
+        "border border-stone-300 bg-white text-stone-600",
         "transition-all duration-150",
-        hoverClass,
-        visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+
+        "opacity-100",
+        "md:opacity-0",
+        visible ? "md:opacity-100" : "",
       ].join(" ")}
     >
       {children}
@@ -47,7 +49,7 @@ export default function PostCard({ post, index, onEdit, onDelete }: PostCardProp
     >
       <div
         className={[
-          "flex overflow-hidden rounded-[9px]",
+          "flex rounded-[9px]",
           "border border-stone-200 bg-white/85 backdrop-blur-sm",
           "transition-all duration-250",
           hovered ? "-translate-y-0.5 shadow-lg shadow-stone-200/70" : "shadow-sm shadow-stone-100",
@@ -76,21 +78,9 @@ export default function PostCard({ post, index, onEdit, onDelete }: PostCardProp
                 title="Edit post"
                 visible={hovered}
                 onClick={() => onEdit(post)}
-                hoverClass="hover:text-stone-700 hover:border-stone-300 hover:bg-stone-50"
+                hoverClass="hover:text-stone-700 hover:border-stone-200 hover:bg-stone-50"
               >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
+                <Pencil className="w-3.5 h-3.5" />
               </IconButton>
 
               {/* Delete button */}
@@ -98,23 +88,9 @@ export default function PostCard({ post, index, onEdit, onDelete }: PostCardProp
                 title="Delete post"
                 visible={hovered}
                 onClick={() => onDelete(post)}
-                hoverClass="hover:text-red-500 hover:border-red-200 hover:bg-red-50"
+                hoverClass="hover:text-stone-700 hover:border-stone-200 hover:bg-stone-50"
               >
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                </svg>
+                <Trash2 className="w-3.5 h-3.5" />
               </IconButton>
             </div>
           </div>

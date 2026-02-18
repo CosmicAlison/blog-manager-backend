@@ -10,7 +10,7 @@ interface EditModalProps {
 
 export default function EditModal({ post, onSave, onCancel }: EditModalProps) {
   const [title, setTitle] = useState(post.title);
-  const [excerpt, setExcerpt] = useState(post.excerpt);
+  const [excerpt, setExcerpt] = useState(post.contents);
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

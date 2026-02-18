@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
+import { useNavigate } from 'react-router-dom';
 
-// Matches your backend buildAuthResponse fields
 interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -30,7 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  const navigate = useNavigate();
+  
   useEffect(() => {
     const checkAuth = async () => {
       const savedUser = localStorage.getItem("user");
@@ -46,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }), // Backend expects username
+      body: JSON.stringify({ username, password }), 
     });
 
     if (!response.ok) throw new Error("Login failed");
@@ -81,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await response.json();
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
+
+      navigate('/home');
     }
   };
 

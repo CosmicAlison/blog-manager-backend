@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState("");
+  const [username, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,12 +18,12 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        await login(email, password);
+        await login(username, password);
       } else {
-        if (!name.trim()) {
+        if (!username.trim()) {
           throw new Error("Name is required");
         }
-        await register(name, email, password);
+        await register(username, email, password);
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
@@ -36,7 +36,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="font-serif text-4xl text-stone-900 mb-2">The Notebook</h1>
+          <h1 className="font-serif text-4xl text-stone-900 mb-2">The Daily Blogger</h1>
           <p className="text-sm text-stone-500">Your personal blog space</p>
         </div>
 
@@ -65,25 +65,8 @@ export default function AuthPage() {
             </button>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <div>
-                <label className="block text-sm font-medium text-stone-700 mb-1.5">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  required={!isLogin}
-                  className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-800 placeholder:text-stone-300 outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100 transition-all"
-                />
-              </div>
-            )}
-
-            <div>
+            {!isLogin && (<div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">
                 Email
               </label>
@@ -95,7 +78,23 @@ export default function AuthPage() {
                 required
                 className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-800 placeholder:text-stone-300 outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100 transition-all"
               />
-            </div>
+            </div>)}
+            
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your username"
+                  required={!isLogin}
+                  className="w-full px-3 py-2 rounded-lg border border-stone-200 bg-white text-stone-800 placeholder:text-stone-300 outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-100 transition-all"
+                />
+              </div>
+
+
 
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">

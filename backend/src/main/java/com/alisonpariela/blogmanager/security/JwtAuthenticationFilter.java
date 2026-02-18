@@ -11,7 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.alisonpariela.blogmanager.model.User;
+
 import org.springframework.security.core.userdetails.UserDetails;
 
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -35,22 +35,19 @@ protected void doFilterInternal(HttpServletRequest request,
     
     final String authHeader = request.getHeader("Authorization");
     final String jwt;
-    final String userEmail; // Calling it userEmail for clarity
+    final String userEmail;
 
-    // 1. Quick exit if no Bearer token
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
         filterChain.doFilter(request, response);
         return;
     }
 
     jwt = authHeader.substring(7);
-    userEmail = jwtService.extractUsername(jwt); // This extracts 'sub' from JWT
+    userEmail = jwtService.extractUsername(jwt);
 
-    // 2. If we have an email and the user isn't already authenticated for this request
     if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-        // 3. VALIDATE the token against the database user
         if (jwtService.isTokenValid(jwt, userDetails)) {
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     userDetails,
@@ -59,7 +56,6 @@ protected void doFilterInternal(HttpServletRequest request,
             );
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             
-            // 4. Final Handshake: Set the security context
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }
     }

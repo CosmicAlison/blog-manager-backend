@@ -6,8 +6,8 @@ import BlogApp from "./BlogApp";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter> {/* Move this to the very top */}
+      <AuthProvider>
         <Routes>
           <Route path="/login" element={<AuthPage />} />
           <Route
@@ -20,7 +20,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }

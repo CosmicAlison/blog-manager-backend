@@ -1,26 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Post } from "../types/types";
+import { useAuth } from "../context/AuthContext";
 
-const SEED_POSTS: Post[] = [
-  { id: 1, title: "The Art of Slow Thinking", excerpt: "In a world optimised for speed, deliberate thought is the ultimate act of rebellion. We've been conditioned to equate quickness with intelligence, but the best ideas often arrive late.", date: "Feb 12, 2026", tag: "Essay", readTime: "5 min" },
-  { id: 2, title: "Building in the Open", excerpt: "Shipping in public is terrifying. It means your half-finished ideas are visible. It means your mistakes are logged. It also means every small win becomes a shared celebration.", date: "Feb 10, 2026", tag: "Dev", readTime: "3 min" },
-  { id: 3, title: "On Walking Without a Destination", excerpt: "The Japanese have a concept — aimless wandering that clears the mind. No AirPods, no podcast, no agenda. Just streets and sky and the quiet hum of being somewhere.", date: "Feb 7, 2026", tag: "Life", readTime: "4 min" },
-  { id: 4, title: "Why I Deleted My Notion", excerpt: "Productivity systems are a form of procrastination with better aesthetics. I spent three years building the perfect second brain and produced almost nothing inside it.", date: "Feb 3, 2026", tag: "Essay", readTime: "6 min" },
-  { id: 5, title: "The Camera Roll as Archive", excerpt: "Every photograph is a small act of grieving — you are acknowledging that this moment, unrepeatable, is already passing as you press the shutter.", date: "Jan 29, 2026", tag: "Life", readTime: "3 min" },
-  { id: 6, title: "Static Sites and the Joy of Boring Tech", excerpt: "New frameworks promise salvation. But a plain HTML file served from a CDN has never betrayed me. Boring technology is a feature, not a flaw.", date: "Jan 24, 2026", tag: "Dev", readTime: "4 min" },
-  { id: 7, title: "Reading in Cursive", excerpt: "Handwriting slows you down. Slowing down makes you notice. Noticing makes you remember. There's a case to be made for analog annotation in a digital reading life.", date: "Jan 20, 2026", tag: "Essay", readTime: "5 min" },
-  { id: 8, title: "The Algorithm Doesn't Know You", excerpt: "It knows your patterns. It knows your triggers. But the self that sits outside your habits — the version of you that surprises even yourself — remains invisible to it.", date: "Jan 15, 2026", tag: "Life", readTime: "4 min" },
-];
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
-export const POSTS_PER_PAGE = 4;
-
-function getToday(): string {
-  return new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+export const POSTS_PER_PAGE = 10;
 
 function guessTag(text: string): Post["tag"] {
   const t = text.toLowerCase();
@@ -45,65 +29,162 @@ interface EditPostInput {
   excerpt: string;
 }
 
+
+interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number; 
+  first: boolean;
+  last: boolean;
+}
+
 export function useBlog() {
-  const [posts, setPosts] = useState<Post[]>(SEED_POSTS);
-  const [page, setPage] = useState(1);
+  const { accessToken } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(0); 
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalPosts = posts.length;
-  const totalPages = Math.max(1, Math.ceil(totalPosts / POSTS_PER_PAGE));
-  const paginated = posts.slice(
-    (page - 1) * POSTS_PER_PAGE,
-    page * POSTS_PER_PAGE
-  );
+  // Fetch posts from backend with pagination
+  useEffect(() => {
+    async function fetchPosts() {
+      if (!accessToken) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`${API_URL}/posts?page=${page}&size=${POSTS_PER_PAGE}&sort=createdAt,desc`, {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+          },
+        });
 
-  function addPost({ title, excerpt }: AddPostInput): void {
+        if (!response.ok) {
+          throw new Error("Failed to fetch posts");
+        }
+
+        const data: PageResponse<Post> = await response.json();
+        setPosts(data.content);
+        setTotalPages(data.totalPages);
+        setTotalPosts(data.totalElements);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, [accessToken, page]);
+
+  async function addPost({ title, excerpt }: AddPostInput): Promise<void> {
     const body = excerpt || "No excerpt provided.";
-    const post: Post = {
-      id: Date.now(),
-      title,
-      excerpt: body,
-      date: getToday(),
-      tag: guessTag(title + " " + body),
-      readTime: estimateRead(body),
-    };
-    setPosts((prev) => [post, ...prev]);
-    setPage(1);
+    
+    try {
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          title,
+          excerpt: body,
+          tag: guessTag(title + " " + body),
+          readTime: estimateRead(body),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create post");
+      }
+
+      // Go back to first page to see the new post (posts are sorted by createdAt desc)
+      setPage(0);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   }
 
-  function editPost({ id, title, excerpt }: EditPostInput): void {
+  async function editPost({ id, title, excerpt }: EditPostInput): Promise<void> {
     const body = excerpt || "No excerpt provided.";
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              title,
-              excerpt: body,
-              tag: guessTag(title + " " + body),
-              readTime: estimateRead(body),
-            }
-          : p
-      )
-    );
+    
+    try {
+      const response = await fetch(`${API_URL}/posts/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          title,
+          excerpt: body,
+          tag: guessTag(title + " " + body),
+          readTime: estimateRead(body),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update post");
+      }
+
+      const updatedPost = await response.json();
+      // Update the post in the current page
+      setPosts((prev) =>
+        prev.map((p) => (p.id === id ? updatedPost : p))
+      );
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   }
 
-  function deletePost(id: number): void {
-    const remaining = posts.filter((p) => p.id !== id);
-    const maxPage = Math.max(1, Math.ceil(remaining.length / POSTS_PER_PAGE));
-    setPosts(remaining);
-    setPage((p) => Math.min(p, maxPage));
+  async function deletePost(id: number): Promise<void> {
+    try {
+      const response = await fetch(`${API_URL}/posts/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete post");
+      }
+
+      const remainingOnPage = posts.length - 1;
+      if (remainingOnPage === 0 && page > 0) {
+        setPage(page - 1);
+      } else {
+        // Refresh current page
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+        setTotalPosts((prev) => prev - 1);
+      }
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   }
 
   function changePage(p: number): void {
-    setPage(Math.max(1, Math.min(p, totalPages)));
+    // Convert from 1-indexed (UI) to 0-indexed (Spring)
+    setPage(p - 1);
   }
 
   return {
     posts,
-    paginated,
-    page,
+    paginated: posts, // All posts on current page
+    page: page + 1, // Convert back to 1-indexed for UI
     totalPosts,
-    totalPages,
+    totalPages: Math.max(1, totalPages),
+    isLoading,
+    error,
     addPost,
     editPost,
     deletePost,

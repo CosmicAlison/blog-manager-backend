@@ -17,7 +17,7 @@ interface IconButtonProps {
   children: React.ReactNode;
 }
 
-function IconButton({ title, visible, onClick, hoverClass, children }: IconButtonProps) {
+function IconButton({ title, visible, onClick, children }: IconButtonProps) {
   return (
     <button
       title={title}

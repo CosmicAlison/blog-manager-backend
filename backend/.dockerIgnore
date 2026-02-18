@@ -1,0 +1,9 @@
+target/
+*.marshal
+.git
+.gitignore
+*.jar
+.idea
+.vscode
+docker-compose.yml
+Dockerfile

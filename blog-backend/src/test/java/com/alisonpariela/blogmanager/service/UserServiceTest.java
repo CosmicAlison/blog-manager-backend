@@ -3,11 +3,15 @@ package com.alisonpariela.blogmanager.service;
 import com.alisonpariela.blogmanager.DTO.UserDTO;
 import com.alisonpariela.blogmanager.model.User;
 import com.alisonpariela.blogmanager.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -31,11 +35,31 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+
         user = new User();
         user.setId(1L);
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPassword("hashed");
+
+        // Set up fake authenticated user in the security context
+        UserDetails mockUserDetails = org.springframework.security.core.userdetails.User
+                .withUsername("testuser")
+                .password("hashed")
+                .roles("USER")
+                .build();
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(
+                        mockUserDetails, null, mockUserDetails.getAuthorities()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -60,4 +84,3 @@ class UserServiceTest {
         assertEquals("new@example.com", updated.getEmail());
     }
 }
-
